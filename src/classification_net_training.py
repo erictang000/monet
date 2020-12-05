@@ -14,7 +14,7 @@ history = History()
 
 batchsize = 32
 T = np.arange(19,21,0.1) # this provides another layer of stochasticity to make the network more robust
-steps = 40
+steps = 10
  # number of steps to generate
 initializer = 'he_normal'
 f = 32 #number of filters
@@ -84,7 +84,7 @@ con = concatenate([x1,x2,x3,x4,x5,x6])
 dense = Dense(512,activation='relu')(con)
 # dense = Dense(256,activation='relu')(dense)
 dense = Dense(128,activation='relu')(dense)
-dense = Dense(64,activation='relu')(dense)
+# dense = Dense(64,activation='relu')(dense)
 # dense = Dense(32,activation='relu')(dense)
 dense2 = Dense(3,activation='softmax')(dense)
 model = Model(inputs=inputs, outputs=dense2)
@@ -125,11 +125,11 @@ xc         = range(25)
 
 
 ##https://stackoverflow.com/questions/11026959/writing-a-dict-to-txt-file-and-reading-it-back
-with open(f'maxpoolingthreedense/{steps}_history.txt', 'wb') as handle:
+with open(f'maxpoolingtwodense/{steps}_history.txt', 'wb') as handle:
     pickle.dump(history.history, handle)
 
 plt.figure()
 plt.plot(xc, train_loss, label="train loss")
 plt.plot(xc, val_loss, label="validation loss")
 plt.legend()
-plt.savefig(f"maxpoolingthreedense/{steps}_loss.png")
+plt.savefig(f"maxpoolingtwodense/{steps}_loss.png")
