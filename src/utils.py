@@ -240,12 +240,13 @@ input:
    - sigma: Standard deviation of localization noise (std of a fixed cell/bead)
 '''
 
-def generate(batchsize=32,steps=1000,T=15,sigma=0.1):
+def generate(batchsize=32,steps=1000,T=15,sigma=0.1,dilation=1):
+    steps *= dilation
     while True:
         # randomly choose a set of trajectory-length and final-time. This is intended
         # to increase variability in simuation conditions.
         T1 = np.random.choice(T,size=1).item()
-        out = np.zeros([batchsize,steps-1,1])
+        out = np.zeros([batchsize,steps//dilation-1,1])
         label = np.zeros([batchsize,1])
         for i in range(batchsize):
             # randomly select diffusion model to simulate for this iteration
@@ -264,10 +265,14 @@ def generate(batchsize=32,steps=1000,T=15,sigma=0.1):
                 alpha=np.random.uniform(low=0.1,high=0.90)
                 x,y,t = CTRW(n=steps,alpha=alpha,T=T1)
 #                x,y,t = CTRW(n=steps,alpha=0.1,T=T1)
-            noise = np.sqrt(sigma)*np.random.randn(steps-1)
+            # print(x)
+            x = x[0::dilation]
+            # print(x)
+            y = y[0::dilation]
+            noise = np.sqrt(sigma)*np.random.randn(steps // dilation -1)
             x1 = np.reshape(x,[1,len(x)])
             x1 = x1-np.mean(x1)
-            x_n = x1[0,:steps]
+            x_n = x1[0,:steps // dilation]
 #            x_n = x1[0,:steps]
             dx = np.diff(x_n)
             # Generate OU noise to add to the data
@@ -279,6 +284,7 @@ def generate(batchsize=32,steps=1000,T=15,sigma=0.1):
                 dx = dx/np.std(dx)
 #            print(np.std(dx))
 #            print(label[i,0])
+                # print(dx.shape)
                 dx = dx+noise
                 out[i,:,0] = dx
        
