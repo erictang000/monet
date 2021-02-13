@@ -13,7 +13,9 @@ import pickle
 history = History()
 
 batchsize = 32
-T = np.arange(19,21,0.1) # this provides another layer of stochasticity to make the network more robust
+# T = np.arange(19,21,0.1) # this provides another layer of stochasticity to make the network more robust
+T = np.arange(29,31,0.1) # this provides another layer of stochasticity to make the network more robust
+time = 30
 steps = 40
  # number of steps to generate
 initializer = 'he_normal'
@@ -106,8 +108,8 @@ callbacks = [
                          mode='max',
                          save_weights_only=False), history]
 
-dilation=9
-gen = generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma,dilation=dilation)
+dilation=1
+gen = generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma,dilation=dilation,interpolate=-1)
 model.fit_generator(generator=gen,
         steps_per_epoch=50,
         epochs=25,
@@ -125,11 +127,11 @@ xc         = range(25)
 
 
 ##https://stackoverflow.com/questions/11026959/writing-a-dict-to-txt-file-and-reading-it-back
-with open(f'interpolating/{dilation}_history.txt', 'wb') as handle:
+with open(f'dilation/{time}_history.txt', 'wb') as handle:
     pickle.dump(history.history, handle)
 
 plt.figure()
 plt.plot(xc, train_loss, label="train loss")
 plt.plot(xc, val_loss, label="validation loss")
 plt.legend()
-plt.savefig(f"interpolating/{dilation}_loss.png")
+plt.savefig(f"dilation/{time}_loss.png")
