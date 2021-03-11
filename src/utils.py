@@ -7,13 +7,11 @@ functions.
 
 
 import numpy as np
-from scipy import stats,fftpack,interpolate
+from scipy import stats,fftpack
 from keras.utils import to_categorical
 from stochastic.processes import diffusion
 from stochastic.processes.diffusion import OrnsteinUhlenbeckProcess
 import scipy.io
-import matplotlib.pyplot as plt
-
 
 
 """
@@ -224,8 +222,8 @@ def Brownian(N=1000,T=50,delta=1):
     
     Sub_brownian(x[:,0], N, T/N, delta, out=x[:,1:])
     
-    out1 = x[0][:N]
-    out2 = x[1][:N]
+    out1 = x[0]
+    out2 = x[1]
     
     return out1,out2
 
@@ -242,33 +240,12 @@ input:
    - sigma: Standard deviation of localization noise (std of a fixed cell/bead)
 '''
 
-def generate(batchsize=32,steps=1000,T=15,sigma=0.1,dilation=1,interpolate=-1):
-    ##dilation represents number of steps to skip between points
-    ##interpolate represents number of points to linearly interpolate between points (-1 indicates none)
-    steps *= dilation
-
-    ##essentially what was happening here was that I was increasing the number of sampled steps over some constant amount of time
-    ##found that if we increase the number of sampled steps, and don't use all of them, we get a decrease in accuracy for some reason
-    ##kind of weird that this is the case but it is possible that the simulation outputs steps in a different way if we ask for too many of them
-
-    ##problem is interpolation: how do we interpolate by time? 
-    ##We generate the tracks using these functions and we have the tracks in order: we have to do interpolation between points manually otherwise 
-
-    ##theoretically sampling 30 points from 300 sampled ones should have relatively same accuracy as just 30 points when we sampled 30 but somehow this is not the case
-    ##why: ??
-
-    ##If we increase T and sample the same number of data points do things get worse??
-    ##expectation: yes definitely
-
-    first = True
+def generate(batchsize=32,steps=1000,T=15,sigma=0.1):
     while True:
         # randomly choose a set of trajectory-length and final-time. This is intended
         # to increase variability in simuation conditions.
-
-
-        # T1 = np.random.choice(T,size=1).item()
-        T1 = T
-        out = np.zeros([batchsize,steps//dilation-1,1])
+        T1 = np.random.choice(T,size=1).item()
+        out = np.zeros([batchsize,steps-1,1])
         label = np.zeros([batchsize,1])
         for i in range(batchsize):
             # randomly select diffusion model to simulate for this iteration
@@ -287,114 +264,10 @@ def generate(batchsize=32,steps=1000,T=15,sigma=0.1,dilation=1,interpolate=-1):
                 alpha=np.random.uniform(low=0.1,high=0.90)
                 x,y,t = CTRW(n=steps,alpha=alpha,T=T1)
 #                x,y,t = CTRW(n=steps,alpha=0.1,T=T1)
-
-            # print(label[i,0])
-            
-            if interpolate <= 0:
-                x = x[0::dilation]
-                y = y[0::dilation]
-            if interpolate > 0:
-                x = x[0::dilation]
-                y = y[0::dilation]
-
-                # if i == 0 and first:
-                #     print(x, y)
-                #     print(len(x))
-
-                num_interp_points = 50
-
-                x_interp_points = [steps / num_interp_points]
-                ##can't really interpolate between different times - we only have access to x points at different times
-
-                y_interp_points = []
-                for j in range(len(x_interp_points)):
-                    y_interp_points.append(y[j])
-                # f = scipy.interpolate.interp1d(x, y, kind="nearest")
-
-                # y_interp_points = np.array([f(point) for point in x_interp_points])
-                # # plt.figure()
-                # plt.plot(x, y, label="original")
-                # plt.plot(x_interp_points, f(x_interp_points), label="interpolated")
-                # print(x_interp_points)
-                # print(y_interp_points)
-                # plt.legend()
-                # plt.show()
-                x_all = np.empty((x.size + x_interp_points.size), dtype=x.dtype)
-                x_all[0::(interpolate + 1)] = x
-                for j in range(interpolate):
-                    x_all[(j + 1)::(interpolate + 1)] = x_interp_points[j::interpolate]
-                x = x_all
-
-                y_all = np.empty((y.size + y_interp_points.size), dtype=y.dtype)
-                y_all[0::(interpolate + 1)] = y
-                for j in range(interpolate):
-                    y_all[(j + 1)::(interpolate + 1)] = y_interp_points[j::interpolate]
-                y= y_all
-
-                # if i == 0 and first:
-                #     first = False
-                #     print(label[i,0])
-                #     print(x, y)
-                #     print(len(x))
-                # plt.figure()
-                # plt.plot(x, y, label="interpolated")
-                # plt.show()
-                # print(label[i,0])
-                # print(len(x))                
-            # if interpolate <= 0:
-            #     x = x[0::dilation]
-            #     y = y[0::dilation]
-            # if interpolate > 0:
-            #     x = x[0::dilation]
-            #     y = y[0::dilation]
-
-            #     # if i == 0 and first:
-            #     #     print(x, y)
-            #     #     print(len(x))
-
-            #     x_interp_points = (x[1:] + x[:-1]) / 2
-            #     y_interp_points = []
-            #     for j in range(len(x_interp_points)):
-            #         y_interp_points.append(y[j])
-            #     # f = scipy.interpolate.interp1d(x, y, kind="nearest")
-
-            #     # y_interp_points = np.array([f(point) for point in x_interp_points])
-            #     # # plt.figure()
-            #     # plt.plot(x, y, label="original")
-            #     # plt.plot(x_interp_points, f(x_interp_points), label="interpolated")
-            #     # print(x_interp_points)
-            #     # print(y_interp_points)
-            #     # plt.legend()
-            #     # plt.show()
-            #     x_all = np.empty((x.size + x_interp_points.size), dtype=x.dtype)
-            #     x_all[0::(interpolate + 1)] = x
-            #     for j in range(interpolate):
-            #         x_all[(j + 1)::(interpolate + 1)] = x_interp_points[j::interpolate]
-            #     x = x_all
-
-            #     y_all = np.empty((y.size + y_interp_points.size), dtype=y.dtype)
-            #     y_all[0::(interpolate + 1)] = y
-            #     for j in range(interpolate):
-            #         y_all[(j + 1)::(interpolate + 1)] = y_interp_points[j::interpolate]
-            #     y= y_all
-
-            #     # if i == 0 and first:
-            #     #     first = False
-            #     #     print(label[i,0])
-            #     #     print(x, y)
-            #     #     print(len(x))
-            #     # plt.figure()
-            #     # plt.plot(x, y, label="interpolated")
-            #     # plt.show()
-            #     # print(label[i,0])
-            #     # print(len(x))
-
-
-
-            noise = np.sqrt(sigma)*np.random.randn(steps // dilation -1)
+            noise = np.sqrt(sigma)*np.random.randn(steps-1)
             x1 = np.reshape(x,[1,len(x)])
             x1 = x1-np.mean(x1)
-            x_n = x1[0,:steps // dilation]
+            x_n = x1[0,:steps]
 #            x_n = x1[0,:steps]
             dx = np.diff(x_n)
             # Generate OU noise to add to the data
@@ -406,8 +279,6 @@ def generate(batchsize=32,steps=1000,T=15,sigma=0.1,dilation=1,interpolate=-1):
                 dx = dx/np.std(dx)
 #            print(np.std(dx))
 #            print(label[i,0])
-                # print(dx.shape)
-                # print(noise.shape)
                 dx = dx+noise
                 out[i,:,0] = dx
        

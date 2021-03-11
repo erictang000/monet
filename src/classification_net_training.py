@@ -13,10 +13,8 @@ import pickle
 history = History()
 
 batchsize = 32
-# T = np.arange(19,21,0.1) # this provides another layer of stochasticity to make the network more robust
-T = np.arange(29,31,0.1) # this provides another layer of stochasticity to make the network more robust
-time = 30
-steps = 40
+T = np.arange(19,21,0.1) # this provides another layer of stochasticity to make the network more robust
+steps = 38
  # number of steps to generate
 initializer = 'he_normal'
 f = 32 #number of filters
@@ -77,17 +75,17 @@ x7 = BatchNormalization()(x7)
 x7 = GlobalAveragePooling1D()(x7)
 
 
-x6 = Conv1D(f,7,padding='same',activation='relu',kernel_initializer=initializer)(inputs)
+x6 = Conv1D(f,3,padding='same',activation='relu',kernel_initializer=initializer)(inputs)
 x6 = BatchNormalization()(x6)
 x6 = GlobalAveragePooling1D()(x6)
 
 
 con = concatenate([x1,x2,x3,x4,x5,x6])
 dense = Dense(512,activation='relu')(con)
-# dense = Dense(256,activation='relu')(dense)
+dense = Dense(256,activation='relu')(dense)
 dense = Dense(128,activation='relu')(dense)
-# dense = Dense(64,activation='relu')(dense)
-# dense = Dense(32,activation='relu')(dense)
+dense = Dense(64,activation='relu')(dense)
+dense = Dense(32,activation='relu')(dense)
 dense2 = Dense(3,activation='softmax')(dense)
 model = Model(inputs=inputs, outputs=dense2)
 
@@ -108,14 +106,14 @@ callbacks = [
                          mode='max',
                          save_weights_only=False), history]
 
-dilation=1
-gen = generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma,dilation=dilation,interpolate=-1)
+
+gen = generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma)
 model.fit_generator(generator=gen,
         steps_per_epoch=50,
         epochs=25,
         verbose=1,
         callbacks=callbacks,
-        validation_data=generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma,dilation=dilation),
+        validation_data=generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma),
         validation_steps=25)
 
 
@@ -127,11 +125,11 @@ xc         = range(25)
 
 
 ##https://stackoverflow.com/questions/11026959/writing-a-dict-to-txt-file-and-reading-it-back
-with open(f'dilation/{time}_history.txt', 'wb') as handle:
+with open(f'{steps}_history.txt', 'wb') as handle:
     pickle.dump(history.history, handle)
 
 plt.figure()
 plt.plot(xc, train_loss, label="train loss")
 plt.plot(xc, val_loss, label="validation loss")
 plt.legend()
-plt.savefig(f"dilation/{time}_loss.png")
+plt.savefig(f"{steps}_loss.png")
