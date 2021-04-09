@@ -1,8 +1,8 @@
 import numpy as np
 from keras.models import Model
-from keras.layers import Dense,BatchNormalization,Conv1D
-from keras.layers import Input,GlobalMaxPooling1D, GlobalAveragePooling1D, concatenate
-from keras.optimizers import Adam
+from keras.layers import Dense,BatchNormalization,Conv1D, LSTM, ReLU
+from keras.layers import Input,GlobalMaxPooling1D, GlobalAveragePooling1D, concatenate, AveragePooling1D, Flatten
+from keras.optimizers import Adam, SGD
 from utils import generate
 import tensorflow as tf
 from keras.callbacks import EarlyStopping,ReduceLROnPlateau,ModelCheckpoint,CSVLogger
@@ -10,85 +10,53 @@ import datetime
 from keras.callbacks import History
 import matplotlib.pyplot as plt
 import pickle
+from residual_block import residual_block
+from blurpool import AverageBlurPooling1D
+
 history = History()
 
-batchsize = 32
+batchsize = 128
 T = np.arange(19,21,0.1) # this provides another layer of stochasticity to make the network more robust
-steps = 40
+steps = 30
  # number of steps to generate
 initializer = 'he_normal'
 f = 32 #number of filters
 sigma = 0 #noise variance
+EPOCHS = 25
 
 inputs = Input((steps-1,1))
 
-x1 = Conv1D(f,2,padding='causal',activation='relu',kernel_initializer=initializer)(inputs)
+x1 = Conv1D(64,1, kernel_initializer=initializer, bias=False)(inputs)
 x1 = BatchNormalization()(x1)
-x1 = Conv1D(f,2,dilation_rate=2,padding='causal',activation='relu',kernel_initializer=initializer)(x1)
-x1 = BatchNormalization()(x1)
-x1 = Conv1D(f,2,dilation_rate=4,padding='causal',activation='relu',kernel_initializer=initializer)(x1)
-x1 = BatchNormalization()(x1)
-x1 = GlobalMaxPooling1D()(x1)
+x2 = residual_block(x1, 64)
+x3 = Conv1D(128,1, kernel_initializer=initializer)(x2)
+x3 = residual_block(x3, 128)
+x4 = Conv1D(256,1, kernel_initializer=initializer)(x3)
+x4 = residual_block(x4, 256, d=2)
+x5 = Conv1D(512,1, kernel_initializer=initializer)(x4)
+x5 = residual_block(x5, 512, d=2)
 
+# y1 = GlobalAveragePooling1D()(x1)
+# y2 = GlobalAveragePooling1D()(x2)
+# y3 = GlobalAveragePooling1D()(x3)
+# y4 = GlobalAveragePooling1D()(x4)
+y5 = GlobalAveragePooling1D()(x5)
 
-x2 = Conv1D(f,2,padding='causal',activation='relu',kernel_initializer=initializer)(inputs)
-x2 = BatchNormalization()(x2)
-x2 = Conv1D(f,2,dilation_rate=3,padding='causal',activation='relu',kernel_initializer=initializer)(x2)
-x2 = BatchNormalization()(x2)
-x2 = Conv1D(f,2,dilation_rate=5,padding='causal',activation='relu',kernel_initializer=initializer)(x2)
-x2 = BatchNormalization()(x2)
-x2 = GlobalMaxPooling1D()(x2)
+# y2 = Flatten()(x2)
+# y3 = Flatten()(x3)
+# y4 = Flatten()(x4)
+# y5 = Flatten()(x5)
+# con = concatenate([y2, y3, y4, y5])
 
-
-x3 = Conv1D(f,3,padding='causal',activation='relu',kernel_initializer=initializer)(inputs)
-x3 = BatchNormalization()(x3)
-x3 = Conv1D(f,3,dilation_rate=2,padding='causal',activation='relu',kernel_initializer=initializer)(x3)
-x3 = BatchNormalization()(x3)
-x3 = Conv1D(f,3,dilation_rate=4,padding='causal',activation='relu',kernel_initializer=initializer)(x3)
-x3 = BatchNormalization()(x3)
-x3 = GlobalMaxPooling1D()(x3)
-
-
-x4 = Conv1D(f,3,padding='causal',activation='relu',kernel_initializer=initializer)(inputs)
-x4 = BatchNormalization()(x4)
-x4 = Conv1D(f,3,dilation_rate=3,padding='causal',activation='relu',kernel_initializer=initializer)(x4)
-x4 = BatchNormalization()(x4)
-x4 = Conv1D(f,3,dilation_rate=5,padding='causal',activation='relu',kernel_initializer=initializer)(x4)
-x4 = BatchNormalization()(x4)
-x4 = GlobalMaxPooling1D()(x4)
-
-
-x5 = Conv1D(f,4,padding='causal',activation='relu',kernel_initializer=initializer)(inputs)
-x5 = BatchNormalization()(x5)
-x5 = Conv1D(f,4,dilation_rate=2,padding='causal',activation='relu',kernel_initializer=initializer)(x5)
-x5 = BatchNormalization()(x5)
-x5 = Conv1D(f,4,dilation_rate=4,padding='causal',activation='relu',kernel_initializer=initializer)(x5)
-x5 = BatchNormalization()(x5)
-x5 = GlobalMaxPooling1D()(x5)
-
-x7 = Conv1D(f,4,padding='causal',activation='relu',kernel_initializer=initializer)(inputs)
-x7 = BatchNormalization()(x7)
-x7 = Conv1D(f,4,dilation_rate=3,padding='causal',activation='relu',kernel_initializer=initializer)(x7)
-x7 = BatchNormalization()(x7)
-x7 = Conv1D(f,4,dilation_rate=5,padding='causal',activation='relu',kernel_initializer=initializer)(x7)
-x7 = BatchNormalization()(x7)
-x7 = GlobalMaxPooling1D()(x7)
-
-
-x6 = Conv1D(f,7,padding='same',activation='relu',kernel_initializer=initializer)(inputs)
-x6 = BatchNormalization()(x6)
-x6 = GlobalMaxPooling1D()(x6)
-
-
-con = concatenate([x1,x2,x3,x4,x5,x6])
-dense = Dense(512,activation='relu')(con)
-# dense = Dense(256,activation='relu')(dense)
-dense = Dense(128,activation='relu')(dense)
-dense = Dense(64,activation='relu')(dense)
+dense2 = Dense(1024,activation='relu')(y5)
+# dense = Dense(512,activation='relu')(dense)
+# # dense = Dense(128,activation='relu')(dense)
+# dense = Dense(64,activation='relu')(dense)
 # dense = Dense(32,activation='relu')(dense)
-dense2 = Dense(3,activation='softmax')(dense)
-model = Model(inputs=inputs, outputs=dense2)
+dense3 = Dense(3,activation='softmax')(dense2)
+model = Model(inputs=inputs, outputs=dense3) 
 
+# optimizer = SGD(lr=0.01, momentum=0.01, nesterov=False)
 optimizer = Adam(lr=1e-5)
 model.compile(optimizer=optimizer,loss='categorical_crossentropy',metrics=['acc'])
 model.summary()
@@ -97,7 +65,7 @@ model.summary()
 callbacks = [
          ReduceLROnPlateau(monitor='val_loss',
                            factor=0.1,
-                           patience=4,
+                           patience=3,
                            verbose=1,
                            min_lr=1e-9),
          ModelCheckpoint(filepath=f'./Models/{steps}_model.h5',
@@ -110,7 +78,7 @@ callbacks = [
 gen = generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma)
 model.fit_generator(generator=gen,
         steps_per_epoch=50,
-        epochs=25,
+        epochs=EPOCHS,
         verbose=1,
         callbacks=callbacks,
         validation_data=generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma),
@@ -121,7 +89,7 @@ train_loss = history.history['loss']
 val_loss   = history.history['val_loss']
 train_acc  = history.history['acc']
 val_acc    = history.history['val_acc']
-xc         = range(25)
+xc         = range(EPOCHS)
 
 
 ##https://stackoverflow.com/questions/11026959/writing-a-dict-to-txt-file-and-reading-it-back
