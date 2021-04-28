@@ -321,8 +321,8 @@ def generate_sim(batchsize=32,steps=1000,T=15,sigma=0.1):
 #                    H = np.random.uniform(low=0.6,high=0.99) #superdiffusive
                 x,y,t = fbm_diffusion(n=steps,H=H,T=T1)
             elif label[i,0] == 1:
-                 continue  
-#                 x,y = Brownian(N=steps,T=T1,delta=1) 
+                 # continue  
+                x,y = Brownian(N=steps,T=T1,delta=1) 
             else:
                 x,y,t = CTRW(n=steps,alpha=np.random.uniform(low=0.2,high=0.99),T=T1)
             noise = np.sqrt(sigma)*np.random.randn(1,steps)

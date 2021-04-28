@@ -38,15 +38,18 @@ Outputs:
 
 
 def classification_on_sim():
-    dx,label=generate_sim(batchsize=100,steps=300,T=15,sigma=0.1)
+    dx,label=generate_sim(batchsize=100,steps=50,T=15,sigma=0.01)
+    with open("example_track.txt", "w") as f:
+        # np.set_printoptions(threshold=sys.maxsize)
+        f.write(np.array2string(dx, threshold=np.inf))
     ### change here to load a different network model
     print(label)
     N=np.shape(dx)[0]
-    net_file = './Models/model_testsigma0-wB-6layern-300-variance-FBMCTRW.h5'
+    net_file = './Models/50_model.h5'
     model = load_model(net_file)
     predictions = []
     for j in range(N):
-        dummy = np.zeros((1,299,1))
+        dummy = np.zeros((1,49,1))
         dummy[0,:,:] = dx[j,:,:]
         y_pred = model.predict(dummy) # get the results for 1D 
         ymean = np.mean(y_pred,axis=0) # calculate mean prediction of N-dimensional trajectory 
@@ -59,6 +62,30 @@ def classification_on_sim():
 
     accuracy = 100 * np.sum([1 if label[i] == predictions[i] else 0 for i in range(len(label))]) / len(label)
     print(accuracy)
+    return
+
+def classification_on_real():
+    dx = np.loadtxt("em18tracks.txt")
+    # dx,label=generate_sim(batchsize=100,steps=50,T=15,sigma=0.01)
+    ### change here to load a different network model
+    N=np.shape(dx)[0]
+    net_file = './Models/30_new_model.h5'
+    model = load_model(net_file)
+    predictions = []
+    for j in range(N):
+        dummy = np.zeros((1,29,1))
+        dummy[0,:,:] = np.reshape(dx[j,:], (29, 1))
+        y_pred = model.predict(dummy) # get the results for 1D 
+        ymean = np.mean(y_pred,axis=0) # calculate mean prediction of N-dimensional trajectory 
+        prediction = np.argmax(ymean,axis=0) # translate to classification
+        predictions.append(prediction)
+        print('y_pred {}'.format(y_pred))
+        print('prediction {}'.format(prediction))
+    # print('ground truth',label[j])
+    # print('--')
+
+    # accuracy = 100 * np.sum([1 if label[i] == predictions[i] else 0 for i in range(len(label))]) / len(label)
+    # print(accuracy)
     return
     
 def classification_on_file(file):
@@ -101,7 +128,7 @@ def classification_on_file(file):
 
 
 
-classification_on_sim()
+classification_on_real()
 # prediction,y_full = classification_on_file(file = './data/trajInterleaved_matrix.mat')
 # print(y_full)
 # print(prediction.shape)

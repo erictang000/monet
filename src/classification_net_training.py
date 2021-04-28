@@ -14,7 +14,7 @@ history = History()
 
 batchsize = 32
 T = np.arange(19,21,0.1) # this provides another layer of stochasticity to make the network more robust
-steps = 38
+steps = 50
  # number of steps to generate
 initializer = 'he_normal'
 f = 32 #number of filters
@@ -100,7 +100,7 @@ callbacks = [
                            patience=4,
                            verbose=1,
                            min_lr=1e-9),
-         ModelCheckpoint(filepath=f'./Models/{steps}_model.h5',
+         ModelCheckpoint(filepath=f'./Models/{steps}_new_model.h5',
                          monitor='val_acc',
                          save_best_only=False,
                          mode='max',
