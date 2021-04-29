@@ -1,5 +1,5 @@
 # MoNet for Sparse Experimental Track Data
-The code in this repo is based off of the paper here: ([https://doi.org/10.1073/pnas.2017616118](https://doi.org/10.1073/pnas.2017616118)), which introduces MoNet as an architecture for classifying the motion of nanoparticles near surfaces. We use it here for a similar use case - for classifying the motion of particles at the surface of 2D devices as one of 3 classes -- Brownian, Fractional Brownian, or Continuous Time Random Walk (CTRW). 
+The code in this repo is based off of the paper here: ([https://doi.org/10.1073/pnas.2017616118](https://doi.org/10.1073/pnas.2017616118)), which introduces MoNet as an architecture for classifying the motion of nanoparticles near surfaces.
 
 * * * * * *
 ### MoNet Description and Improvements made for sparse data.
