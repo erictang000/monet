@@ -2,7 +2,7 @@
 The code in this repo is based off of the paper here: ([https://doi.org/10.1073/pnas.2017616118](https://doi.org/10.1073/pnas.2017616118)), which introduces MoNet as an architecture for classifying the motion of nanoparticles near surfaces.
 
 * * * * * *
-### MoNet Description and Improvements made for sparse data.
+### MoNet Description
 MoNet is a trainable convolutional neural network that classifies the behavior of a trajectory from single particle tracking experiments based on three classes of diffusion (Brownian, subdiffusive Fractional Brownian Motion (FBM), and subdiffusive continuous time random walk (CTRW)) and extracts the α exponent for FBM as well as CTRW classes. This is the code for the paper [Anomalous nanoparticle surface diffusion in LCTEM is revealed by deep learning-assisted analysis](https://doi.org/10.1073/pnas.2017616118). The architecture of MoNet is adapted from [Granik et al.](https://github.com/AnomDiffDB/DB) and is modified based on the [p-variation method](https://journals.aps.org/prl/abstract/10.1103/PhysRevLett.103.180602) to capture multiresolution correlations along the trajectory. In this repo we improved accuracy of MoNet by simply adding more fully connected layers (suggesting that the model can learn more parameters without overfitting), adjusting the size of the convolutional filters, and utilizing average pooling instead of max pooling to more effectively capture short range dependencies in the particles motion, which are more significant for classification at lower track lengths.
 
 ### MoNet Architecture (Original Paper)
