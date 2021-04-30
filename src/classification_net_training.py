@@ -5,7 +5,7 @@ from keras.layers import Input,GlobalMaxPooling1D, GlobalAveragePooling1D, conca
 from keras.optimizers import Adam, SGD
 from utils import generate
 import tensorflow as tf
-from keras.callbacks import EarlyStopping,ReduceLROnPlateau,ModelCheckpoint,CSVLogger
+from keras.callbacks import EarlyStopping,ReduceLROnPlateau,ModelCheckpoint,CSVLogger,LearningRateScheduler
 import datetime
 from keras.callbacks import History
 import matplotlib.pyplot as plt
@@ -22,18 +22,18 @@ steps = 30
 initializer = 'he_normal'
 f = 32 #number of filters
 sigma = 0 #noise variance
-EPOCHS = 25
+EPOCHS = 15
 
 inputs = Input((steps-1,1))
 
 x1 = Conv1D(64,1, kernel_initializer=initializer, bias=False)(inputs)
 x1 = BatchNormalization()(x1)
 x2 = residual_block(x1, 64)
-x3 = Conv1D(128,1, kernel_initializer=initializer)(x2)
+x3 = Conv1D(128,1, kernel_initializer=initializer, bias=False)(x2)
 x3 = residual_block(x3, 128)
-x4 = Conv1D(256,1, kernel_initializer=initializer)(x3)
+x4 = Conv1D(256,1, kernel_initializer=initializer, bias=False)(x3)
 x4 = residual_block(x4, 256, d=2)
-x5 = Conv1D(512,1, kernel_initializer=initializer)(x4)
+x5 = Conv1D(512,1, kernel_initializer=initializer, bias=False)(x4)
 x5 = residual_block(x5, 512, d=2)
 
 # y1 = GlobalAveragePooling1D()(x1)
@@ -56,23 +56,23 @@ dense2 = Dense(1024,activation='relu')(y5)
 dense3 = Dense(3,activation='softmax')(dense2)
 model = Model(inputs=inputs, outputs=dense3) 
 
-# optimizer = SGD(lr=0.01, momentum=0.01, nesterov=False)
-optimizer = Adam(lr=1e-5)
+optimizer = SGD(lr=1e-2, momentum=0.01, nesterov=False)
+# optimizer = Adam(lr=1e-5)
 model.compile(optimizer=optimizer,loss='categorical_crossentropy',metrics=['acc'])
 model.summary()
-
 
 callbacks = [
          ReduceLROnPlateau(monitor='val_loss',
                            factor=0.1,
                            patience=3,
                            verbose=1,
-                           min_lr=1e-9),
-         ModelCheckpoint(filepath=f'./Models/{steps}_model.h5',
+                           min_lr=1e-10),
+         ModelCheckpoint(filepath=f'./Models/{steps}_model_andrew.h5',
                          monitor='val_acc',
                          save_best_only=False,
                          mode='max',
-                         save_weights_only=False), history]
+                         save_weights_only=False),
+                          history]
 
 
 gen = generate(batchsize=batchsize,steps=steps,T=T,sigma=sigma)
